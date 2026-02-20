@@ -1,0 +1,15 @@
+src/
+test/
+tsconfig.json
+.github/
+*.test.ts
+*.spec.ts
+.eslintrc*
+.prettierrc*
+node_modules/
+.git/
+*.map
+HOWTO.md
+/index.js
+.vscode/
+coverage/

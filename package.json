@@ -1,0 +1,68 @@
+{
+  "name": "ipfs-swarm-cli",
+  "version": "2.0.0",
+  "description": "Private IPFS swarm manager — deploy, secure, and manage private IPFS networks with encrypted key distribution, Tailscale support, file explorer, and web dashboard",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "ipfs-swarm": "dist/index.js"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc && rm -rf dist/web/public && cp -r src/web/public dist/web/public",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/",
+    "clean": "rm -rf dist/",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "ipfs",
+    "swarm",
+    "private-network",
+    "p2p",
+    "decentralized",
+    "kubo",
+    "libp2p",
+    "file-sharing",
+    "tailscale",
+    "cli"
+  ],
+  "author": "hunda",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hunda/ipfs-swarm-cli"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "express": "^4.21.0",
+    "inquirer": "^9.3.0",
+    "kubo-rpc-client": "^4.1.0",
+    "multer": "^1.4.5-lts.1",
+    "nat-upnp-2": "^2.0.2",
+    "ora": "^8.1.0",
+    "qrcode-terminal": "^0.12.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/inquirer": "^9.0.7",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.12",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

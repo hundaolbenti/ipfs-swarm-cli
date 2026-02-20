@@ -1,0 +1,21 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+
+# Stale monolith from pre-TypeScript migration
+/index.js
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Coverage / test artifacts
+coverage/
+*.lcov
+
+# OS
+.DS_Store
+Thumbs.db

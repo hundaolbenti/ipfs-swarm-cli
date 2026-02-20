@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPFS Swarm — Command Center</title>
+  <meta name="description"
+    content="Private IPFS Swarm Manager — setup, manage keys, share with colleagues, explore files">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232563eb'/><text y='.76em' x='14' font-size='66' fill='white'>S</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- ═══════════════════════════════════
+     SETUP WIZARD (first-time overlay)
+     ═══════════════════════════════════ -->
+  <div id="setup-wizard" class="wizard-overlay hidden">
+    <div class="wizard">
+      <div class="wizard-header">
+        <div class="wizard-logo"><span class="icon" style="font-size:28px">hub</span></div>
+        <h1>IPFS Swarm</h1>
+        <p>Set up your private IPFS network in minutes.</p>
+      </div>
+      <div class="wizard-steps">
+        <div class="wizard-step-dot active" data-step="0"></div>
+        <div class="wizard-step-dot" data-step="1"></div>
+        <div class="wizard-step-dot" data-step="2"></div>
+        <div class="wizard-step-dot" data-step="3"></div>
+      </div>
+
+      <!-- Step 0: Welcome -->
+      <div class="wizard-card wizard-page" data-step="0">
+        <h2><span class="icon">waving_hand</span> Welcome</h2>
+        <p style="color:var(--text-secondary);font-size:13px;margin-bottom:10px">
+          IPFS Swarm lets you create an encrypted, private network for sharing files.
+        </p>
+        <div class="features-list">
+          <div class="feature-item"><span class="icon">lock</span>
+            <div><strong>Private &amp; Encrypted</strong><span>Only authorized nodes can join your network.</span></div>
+          </div>
+          <div class="feature-item"><span class="icon">upload_file</span>
+            <div><strong>Easy File Sharing</strong><span>Upload, pin, and download across your swarm.</span></div>
+          </div>
+          <div class="feature-item"><span class="icon">dns</span>
+            <div><strong>Decentralized</strong><span>No single point of failure.</span></div>
+          </div>
+          <div class="feature-item"><span class="icon">dashboard</span>
+            <div><strong>Web Dashboard</strong><span>Manage everything from this interface.</span></div>
+          </div>
+        </div>
+        <div class="wizard-footer">
+          <div></div>
+          <button class="btn btn-primary" onclick="wizardNext()">Get Started <span
+              class="icon icon-sm">arrow_forward</span></button>
+        </div>
+      </div>
+
+      <!-- Step 1: Node Type -->
+      <div class="wizard-card wizard-page hidden" data-step="1">
+        <h2><span class="icon">device_hub</span> Choose Node Type</h2>
+        <div class="selection-cards">
+          <div class="selection-card selected" data-value="bootstrap" onclick="selectNodeType(this)">
+            <span class="icon">star</span>
+            <h3>Bootstrap Node</h3>
+            <p>First node. Generates swarm key.</p>
+          </div>
+          <div class="selection-card" data-value="regular" onclick="selectNodeType(this)">
+            <span class="icon">link</span>
+            <h3>Regular Node</h3>
+            <p>Joins an existing swarm.</p>
+          </div>
+        </div>
+        <div class="wizard-footer">
+          <button class="btn" onclick="wizardBack()"><span class="icon icon-sm">arrow_back</span> Back</button>
+          <button class="btn btn-primary" onclick="wizardNext()">Continue <span
+              class="icon icon-sm">arrow_forward</span></button>
+        </div>
+      </div>
+
+      <!-- Step 2: Configuration -->
+      <div class="wizard-card wizard-page hidden" data-step="2">
+        <h2><span class="icon">tune</span> Configuration</h2>
+        <div class="field">
+          <label for="setup-swarm-port">Swarm Port</label>
+          <input type="number" id="setup-swarm-port" value="4001" min="1024" max="65535">
+          <div class="hint">TCP port for peer-to-peer communication</div>
+        </div>
+        <div class="field">
+          <label for="setup-api-port">API Port</label>
+          <input type="number" id="setup-api-port" value="5001" min="1024" max="65535">
+        </div>
+        <div class="field">
+          <label for="setup-gw-port">Gateway Port</label>
+          <input type="number" id="setup-gw-port" value="8080" min="1024" max="65535">
+        </div>
+        <div class="field hidden" id="bootstrap-addr-field">
+          <label for="setup-bootstrap-addr">Bootstrap Address</label>
+          <input type="text" id="setup-bootstrap-addr" placeholder="/ip4/x.x.x.x/tcp/4001/p2p/Qm...">
+          <div class="hint">Multiaddress of the bootstrap node</div>
+        </div>
+        <div class="wizard-footer">
+          <button class="btn" onclick="wizardBack()"><span class="icon icon-sm">arrow_back</span> Back</button>
+          <button class="btn btn-primary" onclick="wizardNext()">Continue <span
+              class="icon icon-sm">arrow_forward</span></button>
+        </div>
+      </div>
+
+      <!-- Step 3: Installing -->
+      <div class="wizard-card wizard-page hidden" data-step="3">
+        <h2><span class="icon">rocket_launch</span> Setting Up</h2>
+        <div class="setup-status" id="setup-steps">
+          <div class="setup-step pending" data-key="kubo"><span class="icon">hourglass_empty</span><span>Install IPFS
+              (Kubo)</span></div>
+          <div class="setup-step pending" data-key="init"><span class="icon">hourglass_empty</span><span>Initialize
+              repository</span></div>
+          <div class="setup-step pending" data-key="key"><span class="icon">hourglass_empty</span><span>Configure swarm
+              key</span></div>
+          <div class="setup-step pending" data-key="config"><span class="icon">hourglass_empty</span><span>Apply network
+              config</span></div>
+        </div>
+        <div id="setup-result" class="hidden" style="margin-top:14px">
+          <div class="wizard-footer">
+            <div></div>
+            <button class="btn btn-primary" onclick="finishSetup()">Open Command Center <span
+                class="icon icon-sm">arrow_forward</span></button>
+          </div>
+        </div>
+        <div id="setup-error" class="hidden" style="margin-top:14px;color:var(--danger);font-size:13px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+     COMMAND CENTER
+     ═══════════════════════════════════ -->
+  <div class="app-shell" id="command-center">
+
+    <!-- ─── Documentation Sidebar ─── -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <h2><span class="icon">menu_book</span> Documentation</h2>
+        <button class="icon-btn" id="close-sidebar" title="Close docs"><span class="icon icon-sm">close</span></button>
+      </div>
+      <div class="sidebar-body" id="docs-content">
+        <!-- Docs are populated by JS -->
+      </div>
+    </aside>
+
+    <!-- ─── Main Area ─── -->
+    <div class="main-area">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-left">
+          <button class="sidebar-toggle" id="toggle-sidebar" title="Toggle docs">
+            <span class="icon">menu_book</span>
+          </button>
+          <div class="header-logo"><span class="icon">hub</span></div>
+          <h1>Command Center</h1>
+          <span class="header-version">v2.0</span>
+        </div>
+        <div class="header-right">
+          <div class="status-badge" id="daemon-status">
+            <span class="dot"></span>
+            <span class="status-text">Checking...</span>
+          </div>
+          <button class="icon-btn" id="theme-toggle" title="Toggle theme"><span class="icon">dark_mode</span></button>
+        </div>
+      </header>
+
+      <!-- Nav Tabs -->
+      <nav class="nav" id="main-nav">
+        <button class="nav-btn active" data-tab="overview"><span class="icon">dashboard</span> Overview</button>
+        <button class="nav-btn" data-tab="daemon"><span class="icon">play_circle</span> Daemon</button>
+        <button class="nav-btn" data-tab="keys"><span class="icon">vpn_key</span> Keys</button>
+        <button class="nav-btn" data-tab="sharing"><span class="icon">share</span> Sharing</button>
+        <button class="nav-btn" data-tab="status"><span class="icon">monitor_heart</span> Status</button>
+        <button class="nav-btn" data-tab="explorer"><span class="icon">explore</span> Explorer</button>
+      </nav>
+
+      <!-- Scrollable Content -->
+      <div class="content-scroll">
+
+        <!-- ═══ Overview ═══ -->
+        <div class="content-panel active" id="panel-overview">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon peers"><span class="icon">group</span></div>
+              <div>
+                <div class="stat-value" id="peer-count">—</div>
+                <div class="stat-label">Connected Peers</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon pins"><span class="icon">push_pin</span></div>
+              <div>
+                <div class="stat-value" id="pin-count">—</div>
+                <div class="stat-label">Pinned Items</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon storage"><span class="icon">database</span></div>
+              <div>
+                <div class="stat-value" id="repo-size">—</div>
+                <div class="stat-label">Storage</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon bw"><span class="icon">swap_vert</span></div>
+              <div>
+                <div class="stat-value" id="bandwidth">—</div>
+                <div class="stat-label">Bandwidth</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title"><span class="icon">info</span> Node Info</div>
+            </div>
+            <div class="info-list">
+              <div class="info-row"><span class="info-label">Peer ID</span><span class="info-value"
+                  id="info-peer-id">—</span></div>
+              <div class="info-row"><span class="info-label">Node Type</span><span class="info-value"
+                  id="info-node-type">—</span></div>
+              <div class="info-row"><span class="info-label">Swarm Port</span><span class="info-value"
+                  id="info-swarm-port">—</span></div>
+              <div class="info-row"><span class="info-label">Last Started</span><span class="info-value"
+                  id="info-last-started">—</span></div>
+              <div class="info-row"><span class="info-label">Swarm Key</span><span class="info-value"
+                  id="info-key-status">—</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Daemon ═══ -->
+        <div class="content-panel" id="panel-daemon">
+          <div class="daemon-controls">
+            <div class="daemon-status-indicator" id="daemon-indicator"></div>
+            <div class="daemon-text">
+              <strong id="daemon-label">Checking...</strong>
+              <span id="daemon-detail">Verifying daemon status</span>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-success" id="btn-daemon-start" disabled><span
+                  class="icon icon-sm">play_arrow</span> Start</button>
+              <button class="btn btn-danger" id="btn-daemon-stop" disabled><span class="icon icon-sm">stop</span>
+                Stop</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title"><span class="icon">info</span> Daemon Info</div>
+            </div>
+            <div class="info-list" id="daemon-info-list">
+              <div class="empty-state"><span class="icon">sync</span> Loading...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Keys ═══ -->
+        <div class="content-panel" id="panel-keys">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title"><span class="icon">vpn_key</span> Swarm Key</div>
+              <div class="btn-group">
+                <button class="btn btn-sm" id="btn-copy-key"><span class="icon icon-sm">content_copy</span> Copy
+                  Key</button>
+                <button class="btn btn-sm btn-danger" id="btn-regen-key"><span class="icon icon-sm">refresh</span>
+                  Regenerate</button>
+              </div>
+            </div>
+            <div id="key-info-area">
+              <div class="empty-state"><span class="icon">vpn_key</span> Loading...</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title"><span class="icon">wifi_tethering</span> Key Server</div>
+            </div>
+            <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">
+              Start a one-time key server so other nodes can securely fetch the swarm key.
+              The server auto-destroys after one successful transfer.
+            </p>
+            <button class="btn btn-primary" id="btn-serve-key"><span class="icon icon-sm">podcasts</span> Serve Key
+              Now</button>
+            <div id="serve-key-result" class="hidden" style="margin-top:12px"></div>
+          </div>
+        </div>
+
+        <!-- ═══ Sharing ═══ -->
+        <div class="content-panel" id="panel-sharing">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title"><span class="icon">group_add</span> Quick Setup for Colleagues</div>
+            </div>
+            <p style="font-size:12px;color:var(--text-secondary);margin-bottom:14px">
+              Share these commands with your colleagues so they can join the swarm.
+              Each step is copyable — click to copy.
+            </p>
+            <div class="quick-steps" id="quick-setup-steps">
+              <div class="empty-state"><span class="icon">share</span> Loading sharing info...</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title"><span class="icon">lan</span> Bootstrap Addresses</div>
+            </div>
+            <div id="bootstrap-addrs">
+              <div class="empty-state"><span class="icon">language</span> Loading...</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title"><span class="icon">key</span> Key Transfer Methods</div>
+            </div>
+            <div id="key-transfer-methods">
+              <div class="empty-state"><span class="icon">key</span> Loading...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Status ═══ -->
+        <div class="content-panel" id="panel-status">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title"><span class="icon">group</span> Connected Peers</div>
+              <button class="btn btn-sm" id="refresh-peers-btn"><span class="icon icon-sm">refresh</span>
+                Refresh</button>
+            </div>
+            <div id="peers-list">
+              <div class="empty-state"><span class="icon">group_off</span> Loading...</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title"><span class="icon">language</span> Network</div>
+            </div>
+            <div class="info-list" id="network-info">
+              <div class="empty-state"><span class="icon">wifi_find</span> Loading...</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title"><span class="icon">vpn_lock</span> Tailscale</div>
+            </div>
+            <div class="info-list" id="tailscale-info">
+              <div class="empty-state"><span class="icon">wifi_find</span> Loading...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ Explorer (embedded file manager) ═══ -->
+        <div class="content-panel" id="panel-explorer">
+          <!-- Upload -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title"><span class="icon">cloud_upload</span> Upload Files</div>
+            </div>
+            <div class="upload-zone" id="upload-zone">
+              <input type="file" id="file-input" hidden multiple>
+              <span class="icon icon-xl">upload_file</span>
+              <p>Drag &amp; drop files here or <span class="browse-link" id="browse-btn">browse</span></p>
+              <p style="font-size:11px;color:var(--text-tertiary);margin-top:4px">Files are pinned automatically · Max
+                100 MB</p>
+            </div>
+            <div class="upload-progress hidden" id="upload-progress">
+              <div class="progress-track">
+                <div class="progress-fill" id="progress-bar"></div>
+              </div>
+              <div class="upload-status-text" id="upload-status">Uploading...</div>
+            </div>
+          </div>
+
+          <!-- Pin by CID -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title"><span class="icon">add_link</span> Pin by CID</div>
+            </div>
+            <form class="pin-cid-form" id="pin-cid-form" onsubmit="return false">
+              <div class="field" style="flex:2">
+                <label for="pin-cid-input">CID</label>
+                <input class="input" id="pin-cid-input" placeholder="QmHash... or bafy..." required>
+              </div>
+              <div class="field" style="flex:1">
+                <label for="pin-alias-input">Name (optional)</label>
+                <input class="input" id="pin-alias-input" placeholder="my-file.pdf">
+              </div>
+              <button class="btn btn-primary" type="submit" id="btn-pin-cid" style="margin-bottom:1px">
+                <span class="icon icon-sm">push_pin</span> Pin
+              </button>
+            </form>
+          </div>
+
+          <!-- Pinned Files -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title"><span class="icon">push_pin</span> Pinned Files</div>
+              <div class="btn-group">
+                <button class="btn btn-sm" id="refresh-files-btn">
+                  <span class="icon icon-sm">refresh</span>
+                </button>
+              </div>
+            </div>
+            <div class="search-bar">
+              <span class="icon">search</span>
+              <input class="input" id="file-search" placeholder="Filter by name or CID...">
+            </div>
+            <div id="files-table-container">
+              <div class="empty-state"><span class="icon">folder_open</span> Loading files...</div>
+            </div>
+          </div>
+
+          <!-- MFS Browser -->
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title"><span class="icon">folder</span> MFS Browser</div>
+              <button class="btn btn-sm" id="refresh-mfs-btn">
+                <span class="icon icon-sm">refresh</span>
+              </button>
+            </div>
+            <div class="mfs-breadcrumb" id="mfs-breadcrumb"></div>
+            <div id="mfs-table-container">
+              <div class="empty-state"><span class="icon">folder_open</span> Loading MFS...</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /content-scroll -->
+    </div><!-- /main-area -->
+  </div><!-- /app-shell -->
+
+  <script src="app.js"></script>
+</body>
+
+</html>
